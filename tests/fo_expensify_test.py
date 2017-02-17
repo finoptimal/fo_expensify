@@ -35,7 +35,7 @@ parser.add_argument("-g", "--get_policies",
                     default=False,
                     help="Get policy details (to be used with -p).")
 
-parser.add_argument("-i", "--partnerUserID", 
+parser.add_argument("-i", "--partner_user_id", 
                     type=str,
                     default="",
                     help="Credential: partnerUserID")
@@ -78,7 +78,7 @@ parser.add_argument("-rs", "--report_states",
                     default="",
                     help="Export filter: SUBMITTED, APPROVED, etc.")
 
-parser.add_argument("-s", "--partnerUserSecret", 
+parser.add_argument("-s", "--partner_user_secret", 
                     type=str,
                     default="",
                     help="Credential: partnerUserSecret")
@@ -103,20 +103,20 @@ if __name__=='__main__':
     args = parser.parse_args()
 
     creds = {
-        "partnerUserID"     : args.partnerUserID,
-        "partnerUserSecret" : args.partnerUserSecret,
+        "partnerUserID"     : args.partner_user_id,
+        "partnerUserSecret" : args.partner_user_secret,
     }
 
     if args.employee_data_path:
         response_json = fo_expensify.update_employees(
-            args.policyIDs[0], args.employee_data_path,
-            troubleshoot=args.troubleshoot, verbosity=args.verbosity, **creds)
+            args.policy_ids[0], args.employee_data_path,
+            verbosity=args.verbosity, **creds)
 
     if args.get_policy_list:
         response_json = fo_expensify.get_policy_list(
             verbosity=args.verbosity, **creds)
 
-    if args.get_policies and len(args.policyIDs) > 0:
+    if args.get_policies and len(args.policy_ids) > 0:
         response_json = fo_expensify.get_policies(
             policy_ids=args.policy_ids,
             verbosity=args.verbosity, **creds)
