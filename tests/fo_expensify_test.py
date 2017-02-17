@@ -10,6 +10,11 @@ parser.add_argument("-e", "--employee_data_path",
                     default="",
                     help="path to .csv file of employees to update?")
 
+parser.add_argument("-g", "--get_policies", 
+                    action="store_true",
+                    default=False,
+                    help="Get policy details (to be used with -p).")
+
 parser.add_argument("-i", "--partnerUserID", 
                     type=str,
                     default="",
@@ -54,7 +59,7 @@ if __name__=='__main__':
         response_json = fo_expensify.get_policy_list(
             verbosity=args.verbosity, **creds)
 
-    if len(args.policyIDs) > 1:
+    if args.get_policies and len(args.policyIDs) > 0:
         response_json = fo_expensify.get_policies(
             policy_ids=args.policyIDs,
             verbosity=args.verbosity, **creds)

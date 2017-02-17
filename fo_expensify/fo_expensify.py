@@ -32,7 +32,10 @@ def update_employees(policy_id, data_path, verbosity=0, **credentials):
     resp = requests.post(URL, data=data, files=files)
 
     if verbosity > 1:
-        print json.dumps(resp.json(), indent=4)
+        print "Expensify {} {} call response status code: {}".format(
+            rjd["inputSettings"]["type"], rjd["type"], resp.status_code) 
+        if verbosity > 3:
+            print json.dumps(resp.json(), indent=4)
     
     return resp.json()    
 
@@ -58,7 +61,10 @@ def get_policy_list(admin_only=True, user_email=None, verbosity=0,
     resp = requests.post(URL, data=data)
 
     if verbosity > 1:
-        print json.dumps(resp.json(), indent=4)
+        print "Expensify {} {} call response status code: {}".format(
+            rjd["inputSettings"]["type"], rjd["type"], resp.status_code) 
+        if verbosity > 3:
+            print json.dumps(resp.json(), indent=4)
     
     return resp.json()    
 
@@ -89,7 +95,10 @@ def get_policies(policy_ids=None, user_email=None,
     resp = requests.post(URL, data=data)
 
     if verbosity > 1:
-        print json.dumps(resp.json(), indent=4)
+        print "Expensify {} {} call response status code: {}".format(
+            rjd["inputSettings"]["type"], rjd["type"], resp.status_code) 
+        if verbosity > 3:
+            print json.dumps(resp.json(), indent=4)
     
     return resp.json()    
 
