@@ -46,7 +46,7 @@ def export_and_download(report_states=None, limit=None,
         "credentials"    : credentials,
         "onReceive"      : {"immediateResponse" : ["returnRandomFileName"]},
         "inputSettings"  : {"type" : "combinedReportData", "filters" : {}},
-        "outputSettings" : {"fileExtension" : file_extension}}
+        "outputSettings" : {"fileExtension" : file_extension.replace(".", "")}}
 
     if report_states:
         if isinstance(report_states, (str, unicode)):
@@ -97,11 +97,14 @@ def export_and_download(report_states=None, limit=None,
         
     resp = requests.post(URL, data=data)
 
+    if verbosity > 3:
+        print resp.text
     if verbosity > 1:
         print "Expensify {} {} call response status code: {}".format(
-            rjd["inputSettings"]["type"], rjd["type"], resp.status_code) 
-        if verbosity > 3:
-            print resp.text
+            rjd["inputSettings"]["type"], rjd["type"], resp.status_code)
+        
+    if resp.text[0] == "{" and resp.json().get("responseCode") == 500:
+        return {}
 
     rjd2 = {"type"        : "download",
             "credentials" : credentials,
@@ -110,12 +113,12 @@ def export_and_download(report_states=None, limit=None,
     data2 = {"requestJobDescription" : json.dumps(rjd2, indent=4)}
     
     resp2 = requests.post(URL, data=data2)
-
+    
     if verbosity > 1:
-        print "Expensify {} call response status code: {}".format(
-            rjd2["type"], resp2.status_code) 
         if verbosity > 3:
             print resp2.json()
+        print "Expensify {} call response status code: {}".format(
+            rjd2["type"], resp2.status_code) 
 
     return resp2.json()
 
