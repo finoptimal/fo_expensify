@@ -1,3 +1,4 @@
+from __future__ import print_function
 """
 Wrapper around this REST API:
 
@@ -33,8 +34,8 @@ def export_and_download(report_states=None, limit=None,
                         report_ids=None, policy_ids=None,
                         start_date=None, end_date=None, approved_after=None,
                         export_mark_filter=None, export_mark=None,
-                        file_base_name="fo_exp", file_extension="json",
-                        template=None,
+                        file_base_name="fo_exp_", file_extension="json",
+                        template=None, clear_bad_escapes=True,
                         verbosity=0, **credentials):
     """
     https://integrations.expensify.com/Integration-Server/doc/#report-exporter
@@ -98,10 +99,10 @@ def export_and_download(report_states=None, limit=None,
     resp = requests.post(URL, data=data)
 
     if verbosity > 3:
-        print resp.text
+        print(resp.text)
     if verbosity > 1:
-        print "Expensify {} {} call response status code: {}".format(
-            rjd["inputSettings"]["type"], rjd["type"], resp.status_code)
+        print("Expensify {} {} call response status code: {}".format(
+            rjd["inputSettings"]["type"], rjd["type"], resp.status_code))
         
     if resp.text[0] == "{" and resp.json().get("responseCode") == 500:
         return {}
@@ -113,14 +114,30 @@ def export_and_download(report_states=None, limit=None,
     data2 = {"requestJobDescription" : json.dumps(rjd2, indent=4)}
     
     resp2 = requests.post(URL, data=data2)
-    
-    if verbosity > 1:
-        if verbosity > 3:
-            print resp2.json()
-        print "Expensify {} call response status code: {}".format(
-            rjd2["type"], resp2.status_code) 
 
-    return resp2.json()
+    try:
+        if clear_bad_escapes:
+            rj = json.loads(resp2.text.replace("\\", ""))
+        else:
+            rj = resp2.json()
+            
+    except Exception as Exc:
+        import traceback;traceback.print_exc()
+        if verbosity > 1:
+            if clear_bad_escapes:
+                print('Inspect resp2.text.replace("\\", ""):')
+            else:
+                print('Inspect resp2.text:')
+            import ipdb;ipdb.set_trace()
+        raise
+        
+    if verbosity > 1:
+        if verbosity > 8:
+            print(rj)
+        print("Expensify {} call response status code: {}".format(
+            rjd2["type"], resp2.status_code)) 
+
+    return rj
 
 def get_policies(policy_ids=None, user_email=None,
                  verbosity=0, **credentials):
@@ -149,10 +166,10 @@ def get_policies(policy_ids=None, user_email=None,
     resp = requests.post(URL, data=data)
 
     if verbosity > 1:
-        print "Expensify {} {} call response status code: {}".format(
-            rjd["inputSettings"]["type"], rjd["type"], resp.status_code) 
+        print("Expensify {} {} call response status code: {}".format(
+            rjd["inputSettings"]["type"], rjd["type"], resp.status_code)) 
         if verbosity > 3:
-            print json.dumps(resp.json(), indent=4)
+            print(json.dumps(resp.json(), indent=4))
     
     return resp.json()    
 
@@ -178,10 +195,10 @@ def get_policy_list(admin_only=True, user_email=None, verbosity=0,
     resp = requests.post(URL, data=data)
 
     if verbosity > 1:
-        print "Expensify {} {} call response status code: {}".format(
-            rjd["inputSettings"]["type"], rjd["type"], resp.status_code) 
+        print("Expensify {} {} call response status code: {}".format(
+            rjd["inputSettings"]["type"], rjd["type"], resp.status_code)) 
         if verbosity > 3:
-            print json.dumps(resp.json(), indent=4)
+            print(json.dumps(resp.json(), indent=4))
     
     return resp.json()    
 
@@ -206,10 +223,10 @@ def update_employees(policy_id, data_path, verbosity=0, **credentials):
     resp = requests.post(URL, data=data, files=files)
 
     if verbosity > 1:
-        print "Expensify {} {} call response status code: {}".format(
-            rjd["inputSettings"]["type"], rjd["type"], resp.status_code) 
+        print("Expensify {} {} call response status code: {}".format(
+            rjd["inputSettings"]["type"], rjd["type"], resp.status_code)) 
         if verbosity > 3:
-            print json.dumps(resp.json(), indent=4)
+            print(json.dumps(resp.json(), indent=4))
     
     return resp.json()    
 
