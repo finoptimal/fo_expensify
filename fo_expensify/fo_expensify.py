@@ -95,16 +95,24 @@ def export_and_download(report_states=None, limit=None,
 
     data = {"requestJobDescription" : json.dumps(rjd, indent=4),
             "template"              : template}
-        
+
+    if verbosity > 2:
+        print("Expensify JobDescription (sans creds):")
+        vjd = rjd.copy()
+        del(vjd["credentials"])
+        print(json.dumps(vjd, indent=4))
+    
     resp = requests.post(URL, data=data)
 
-    if verbosity > 3:
+    if verbosity > 6:
         print(resp.text)
     if verbosity > 1:
         print("Expensify {} {} call response status code: {}".format(
             rjd["inputSettings"]["type"], rjd["type"], resp.status_code))
         
     if resp.text[0] == "{" and resp.json().get("responseCode") == 500:
+        if verbosity > 1:
+            print(resp.text)
         return {}
 
     rjd2 = {"type"        : "download",
@@ -112,7 +120,13 @@ def export_and_download(report_states=None, limit=None,
             "fileName"    : resp.text}
 
     data2 = {"requestJobDescription" : json.dumps(rjd2, indent=4)}
-    
+
+    if verbosity > 2:
+        print("Expensify JobDescription (sans creds):")
+        vjd2 = rjd2.copy()
+        del(vjd2["credentials"])
+        print(json.dumps(vjd2, indent=4))
+
     resp2 = requests.post(URL, data=data2)
 
     try:
@@ -133,9 +147,12 @@ def export_and_download(report_states=None, limit=None,
         
     if verbosity > 1:
         if verbosity > 8:
-            print(rj)
+            print(json.dumps(rj, indent=4))
         print("Expensify {} call response status code: {}".format(
-            rjd2["type"], resp2.status_code)) 
+            rjd2["type"], resp2.status_code))
+        if verbosity > 10:
+            print("Inspect resp2.text, rj:")
+            import ipdb;ipdb.set_trace()
 
     return rj
 
@@ -168,7 +185,7 @@ def get_policies(policy_ids=None, user_email=None,
     if verbosity > 1:
         print("Expensify {} {} call response status code: {}".format(
             rjd["inputSettings"]["type"], rjd["type"], resp.status_code)) 
-        if verbosity > 3:
+        if verbosity > 6:
             print(json.dumps(resp.json(), indent=4))
     
     return resp.json()    
