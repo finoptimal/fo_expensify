@@ -12,7 +12,7 @@ import json, requests
 URL = "https://integrations.expensify.com/Integration-Server/" + \
       "ExpensifyIntegrations"
 
-DEFAULT_TEMPLATE = """
+DEFAULT_JSON_TEMPLATE = """
 [
     <#list reports as report>
         <#list report.transactionList as expense>
@@ -91,7 +91,7 @@ def export_and_download(report_states=None, limit=None,
         rjd["outputSettings"]["fileBasename"] = file_base_name
 
     if not template:
-        template = DEFAULT_TEMPLATE
+        template = DEFAULT_JSON_TEMPLATE
 
     data = {"requestJobDescription" : json.dumps(rjd, indent=4),
             "template"              : template}
@@ -168,9 +168,9 @@ def get_policies(policy_ids=None, user_email=None,
         
     # requestJobDescription
     rjd = {
-        "type"          : "get",
-        "credentials"   : credentials,
-        "inputSettings" : {
+        "type"             : "get",
+        "credentials"      : credentials,
+        "inputSettings"    : {
             "type"         : "policy",
             "fields"       : ["categories", "reportFields", "tags", "tax"],
             "policyIDList" : policy_ids}}
@@ -228,9 +228,9 @@ def update_employees(policy_id, data_path, verbosity=0, **credentials):
         "type"          : "update",
         "credentials"   : credentials.copy(),
         "inputSettings" : {
-            "type"     : "employees",
-            "policyID" : policy_id,
-            "fileType" : "csv"}}
+            "type"      : "employees",
+            "policyID"  : policy_id,
+            "fileType"  : "csv"}}
 
     data  = {
         "requestJobDescription" : json.dumps(rjd, indent=4),}
@@ -247,3 +247,46 @@ def update_employees(policy_id, data_path, verbosity=0, **credentials):
     
     return resp.json()    
 
+def update_policy(policy_id, categories=None, tags=None,
+                  default_action="replace", verbosity=0, **credentials):
+    """
+    https://integrations.expensify.com/Integration-Server/doc/#policy-updater
+
+    categories AND/OR tags must be a json-serializable dictionary as per
+     the API documentation.
+    """
+    if not categories and not tags:
+        raise Exception("Need to update a least one of categories or tags!")
+    
+    # requestJobDescription
+    rjd = {
+        "type"          : "update",
+        "credentials"   : credentials.copy(),
+        "inputSettings" : {
+            "type"      : "policy",
+            "policyID"  : policy_id}}
+
+    if categories:
+        if not "action" in categories:
+            categories["action"] = default_action
+            
+        rjd["categories"] = categories
+            
+    if tags:
+        if tags.get("source") == "file":
+            raise NotImplementedError("Implement dependent-level tag updates!")
+
+        rjd["tags"] = tags
+            
+    data  = {
+        "requestJobDescription" : json.dumps(rjd, indent=4),}
+    
+    resp = requests.post(URL, data=data)
+
+    if verbosity > 1:
+        print("Expensify {} {} call response status code: {}".format(
+            rjd["inputSettings"]["type"], rjd["type"], resp.status_code)) 
+        if verbosity > 3:
+            print(json.dumps(resp.json(), indent=4))
+    
+    return resp.json()    
