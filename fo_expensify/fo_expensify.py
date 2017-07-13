@@ -214,7 +214,7 @@ def get_policy_list(admin_only=True, user_email=None, verbosity=0,
     if verbosity > 1:
         print("Expensify {} {} call response status code: {}".format(
             rjd["inputSettings"]["type"], rjd["type"], resp.status_code)) 
-        if verbosity > 3:
+        if verbosity > 5:
             print(json.dumps(resp.json(), indent=4))
     
     return resp.json()    
@@ -286,7 +286,7 @@ def update_policy(policy_id, categories=None, tags=None,
     if verbosity > 1:
         print("Expensify {} {} call response status code: {}".format(
             rjd["inputSettings"]["type"], rjd["type"], resp.status_code)) 
-        if verbosity > 3:
+        if verbosity > 5:
             print(json.dumps(resp.json(), indent=4))
-    
+            
     return resp.json()    
