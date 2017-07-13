@@ -131,7 +131,15 @@ def export_and_download(report_states=None, limit=None,
 
     try:
         if clear_bad_escapes:
-            rj = json.loads(resp2.text.replace("\\", ""))
+            # Expensify uses colons as tag delimimters. If there's a colon in
+            #  the tag name, it "escapes" them with a backslash. That backslash,
+            #  which makes for invalid json because it's not actually escaping
+            #  anything, will blow up json.loads, so it needs to get gone.
+            # We don't turn \: into just :, though, because then a downstream
+            #  process can't tell if it's supposed to be a delimiter or a
+            #  literal colon. Instead, we make it something that a downstream
+            #  process is VERY unlikely to mistake for anything but a colon...
+            rj = json.loads(resp2.text.replace("\\:", "|||||"))
         else:
             rj = resp2.json()
             
@@ -139,7 +147,7 @@ def export_and_download(report_states=None, limit=None,
         import traceback;traceback.print_exc()
         if verbosity > 1:
             if clear_bad_escapes:
-                print('Inspect resp2.text.replace("\\", ""):')
+                print('Inspect resp2.text.replace("\\:", "|||||")')
             else:
                 print('Inspect resp2.text:')
             import ipdb;ipdb.set_trace()
