@@ -289,4 +289,4 @@ def update_policy(policy_id, categories=None, tags=None,
         if verbosity > 3:
             print(json.dumps(resp.json(), indent=4))
     
-    return resp.json()    
+    return resp.json()
