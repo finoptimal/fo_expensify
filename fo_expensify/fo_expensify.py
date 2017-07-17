@@ -35,6 +35,7 @@ def export_and_download(report_states=None, limit=None,
                         start_date=None, end_date=None, approved_after=None,
                         export_mark_filter=None, export_mark=None,
                         file_base_name="fo_exp_", file_extension="json",
+                        download_path=None,
                         template=None, clear_bad_escapes=True,
                         verbosity=0, **credentials):
     """
@@ -71,7 +72,8 @@ def export_and_download(report_states=None, limit=None,
     if report_ids:
         if isinstance(report_ids, (str, unicode)):
             report_ids = report_ids.split(",")
-        rjd["inputSettings"]["filters"]["reportIDList"] = ",".join(report_ids)
+        rjd["inputSettings"]["filters"]["reportIDList"] = ",".join(
+            [str(int(rid)) for rid in report_ids])
             
     if policy_ids:
         if isinstance(policy_ids, (str, unicode)):
@@ -129,6 +131,14 @@ def export_and_download(report_states=None, limit=None,
 
     resp2 = requests.post(URL, data=data2)
 
+    if file_extension.replace(".", "").lower() == "pdf":
+        # Just save and return the path
+        destination_handle = open(download_path, 'wb')
+        for line in resp2.content:
+            destination_handle.write(line)
+
+        return download_path
+    
     try:
         if clear_bad_escapes:
             # Expensify uses colons as tag delimimters. If there's a colon in
