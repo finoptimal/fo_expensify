@@ -308,3 +308,41 @@ def update_policy(policy_id, categories=None, tags=None,
             print(json.dumps(resp.json(), indent=4))
     
     return resp.json()
+
+def set_report_status(report_ids, status="REIMBURSED", verbosity=0,
+                      **credentials):
+    """
+    Currently REIMBURSED is the only thing you can set a report's status to:
+
+    https://integrations.expensify.com/Integration-Server/doc/
+     #report-status-updater    
+    """
+    if not isinstance(report_ids, (list, tuple)):
+        report_ids = str(report_ids).split(",")
+
+    data = {"requestJobDescription": json.dumps({
+        "type":"update",
+        "credentials": credentials.copy(),
+        "inputSettings":{
+            "type":"reportStatus",
+            "status" : "REIMBURSED",
+            "filters":{
+                "reportIDList": ",".join(report_ids)
+            }
+        }
+    }, indent=4)}
+
+    resp = requests.post(URL, data=data)
+    rj   = resp.json()
+
+    if "skippedReports" in rj:
+        skipped_reports = rj["skippedReports"]
+        print("The following reports were NOT updated:")
+        for skip_dict in skipped_reports:
+            print(skip_dict['reportID'],"-",skip_dict['reason'])
+
+    if verbosity > 1:
+        print("Expensify report-status-updater call status code: {}".format(
+            resp.status_code))
+            
+    return rj
