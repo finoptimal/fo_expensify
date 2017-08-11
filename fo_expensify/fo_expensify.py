@@ -12,6 +12,7 @@ import json, requests
 URL = "https://integrations.expensify.com/Integration-Server/" + \
       "ExpensifyIntegrations"
 
+MAX_TRIES             = 5
 DEFAULT_JSON_TEMPLATE = """
 [
     <#list reports as report>
@@ -227,8 +228,20 @@ def get_policy_list(admin_only=True, user_email=None, verbosity=0,
 
     data = {"requestJobDescription" : json.dumps(rjd, indent=4)}
 
-    resp = requests.post(URL, data=data)
+    # Occasionally there are transient API problems that a tinsure of time
+    #  will sufficiently wait out.
+    times_tried = 0
+    while True:
+        resp = requests.post(URL, data=data)
+        if "policyList" in resp.json():
+            break
 
+        times_tried += 1
+
+        if times_tried > MAX_TRIES:
+            print(json.dumps(resp.json(), indent=4))
+            raise Exception('Not finding "policyList" in resp.json()!')
+        
     if verbosity > 1:
         print("Expensify {} {} call response status code: {}".format(
             rjd["inputSettings"]["type"], rjd["type"], resp.status_code)) 
