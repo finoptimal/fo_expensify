@@ -7,7 +7,7 @@ https://integrations.expensify.com/Integration-Server/doc/
 Copyright 2017 FinOptimal. All rights reserved.
 """
 
-import json, requests
+import json, requests, time
 
 URL = "https://integrations.expensify.com/Integration-Server/" + \
       "ExpensifyIntegrations"
@@ -237,8 +237,9 @@ def get_policy_list(admin_only=True, user_email=None, verbosity=0,
             break
 
         times_tried += 1
-
-        if times_tried > MAX_TRIES:
+        time.sleep(2 * times_tried) # Back off a bit...
+        
+        if times_tried >= MAX_TRIES:
             print(json.dumps(resp.json(), indent=4))
             raise Exception('Not finding "policyList" in resp.json()!')
         
