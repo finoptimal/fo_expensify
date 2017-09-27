@@ -58,7 +58,7 @@ def retry(max_tries=10, delay_secs=0.2):
                     tries    -= 1
                     attempts += 1
                     if tries <= 0:
-                        six.print_("Failing after {} tries!".format(attempts))
+                        print("Failing after {} tries!".format(attempts))
                         raise
                     # back off as failures accumulate in case it's transient
                     time.sleep(delay * attempts)
