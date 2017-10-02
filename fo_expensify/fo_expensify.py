@@ -155,8 +155,8 @@ def export_and_download(report_states=None, limit=None,
             rj = resp2.json()
             
     except Exception as Exc:
-        import traceback;traceback.print_exc()
         if verbosity > 1:
+            import traceback;traceback.print_exc()
             if clear_bad_escapes:
                 print('Inspect resp2.text.replace("\\:", "|||||")')
             else:
