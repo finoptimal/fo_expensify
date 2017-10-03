@@ -31,6 +31,42 @@ DEFAULT_JSON_TEMPLATE = """
 ]
 """
 
+def retry(max_tries=10, delay_secs=0.2):
+    """
+    Produces a decorator which tries effectively the function it decorates
+     a given number of times. This is meant to (considerately) address
+     occassional, transient unexpected behavior by the Expensify API.
+    """
+    def decorator(retriable_function):
+        def inner(*args, **kwargs):
+            """
+            Retries retriable_function max_tries times, waiting delay_secs
+             between tries (and increasing delay_secs geometrically by the
+             drag_factor). escape can be set to true during a run to get out
+             immediately if, e.g. ipdb is running.
+            """
+            tries  = kwargs.get("tries", max_tries)
+            delay  = kwargs.get("delay", delay_secs)
+
+            attempts = 0
+            
+            while True:
+                try:
+                    return retriable_function(*args, **kwargs)
+                    break
+                except:
+                    tries    -= 1
+                    attempts += 1
+                    if tries <= 0:
+                        print("Failing after {} tries!".format(attempts))
+                        raise
+                    # back off as failures accumulate in case it's transient
+                    time.sleep(delay * attempts)
+                    
+        return inner
+    return decorator
+
+@retry()
 def export_and_download(report_states=None, limit=None,
                         report_ids=None, policy_ids=None,
                         start_date=None, end_date=None, approved_after=None,
@@ -175,6 +211,7 @@ def export_and_download(report_states=None, limit=None,
 
     return rj
 
+@retry()
 def get_policies(policy_ids=None, user_email=None,
                  verbosity=0, **credentials):
     """
@@ -209,6 +246,7 @@ def get_policies(policy_ids=None, user_email=None,
     
     return resp.json()    
 
+@retry()
 def get_policy_list(admin_only=True, user_email=None, verbosity=0,
                     **credentials):
     """
@@ -251,6 +289,7 @@ def get_policy_list(admin_only=True, user_email=None, verbosity=0,
     
     return resp.json()    
 
+@retry()
 def update_employees(policy_id, data_path, verbosity=0, **credentials):
     """
     https://integrations.expensify.com/Integration-Server/doc/#employee-updater
@@ -279,6 +318,7 @@ def update_employees(policy_id, data_path, verbosity=0, **credentials):
     
     return resp.json()    
 
+@retry()
 def update_policy(policy_id, categories=None, tags=None,
                   default_action="replace", verbosity=0, **credentials):
     """
@@ -323,6 +363,7 @@ def update_policy(policy_id, categories=None, tags=None,
     
     return resp.json()
 
+@retry()
 def set_report_status(report_ids, status="REIMBURSED", verbosity=0,
                       **credentials):
     """
