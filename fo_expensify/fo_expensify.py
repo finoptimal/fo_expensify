@@ -109,6 +109,8 @@ def export_and_download(report_states=None, limit=None,
     if report_ids:
         if isinstance(report_ids, (str, unicode)):
             report_ids = report_ids.split(",")
+        elif isinstance(report_ids, (float, long, int)):
+            report_ids = [str(int(report_ids))]
         rjd["inputSettings"]["filters"]["reportIDList"] = ",".join(
             [str(int(rid)) for rid in report_ids])
             
