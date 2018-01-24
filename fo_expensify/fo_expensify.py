@@ -12,7 +12,7 @@ import json, requests, time
 URL = "https://integrations.expensify.com/Integration-Server/" + \
       "ExpensifyIntegrations"
 
-MAX_TRIES             = 5
+MAX_TRIES             = 3
 DEFAULT_JSON_TEMPLATE = """
 [
     <#list reports as report>
@@ -126,7 +126,7 @@ def export_and_download(report_states=None, limit=None,
         # This wrapper doesn't support emailing yet...
         rjd["onFinish"] = [
             {"actionName" : "markAsExported",
-             "label"      : "FinOptimal Expensify API Wrapper Export"}]
+             "label"      : export_mark}]
 
     if file_base_name:
         rjd["outputSettings"]["fileBasename"] = file_base_name
@@ -178,30 +178,20 @@ def export_and_download(report_states=None, limit=None,
 
         return download_path
     
-    try:
-        if clear_bad_escapes:
-            # Expensify uses colons as tag delimimters. If there's a colon in
-            #  the tag name, it "escapes" them with a backslash. That backslash,
-            #  which makes for invalid json because it's not actually escaping
-            #  anything, will blow up json.loads, so it needs to get gone.
-            # We don't turn \: into just :, though, because then a downstream
-            #  process can't tell if it's supposed to be a delimiter or a
-            #  literal colon. Instead, we make it something that a downstream
-            #  process is VERY unlikely to mistake for anything but a colon...
-            rj = json.loads(resp2.text.replace("\\:", "|||||"))
-        else:
-            rj = resp2.json()
+    if clear_bad_escapes:
+        # Expensify uses colons as tag delimimters. If there's a colon in
+        #  the tag name, it "escapes" them with a backslash. That backslash,
+        #  which makes for invalid json because it's not actually escaping
+        #  anything, will blow up json.loads, so it needs to get gone.
+        # We don't turn \: into just :, though, because then a downstream
+        #  process can't tell if it's supposed to be a delimiter or a
+        #  literal colon. Instead, we make it something that a downstream
+        #  process is VERY unlikely to mistake for anything but a colon...
+        colon_cleansed_rj = resp2.text.replace("\\:", "|||||")
+        rj                = json.loads(colon_cleansed_rj)
+    else:
+        rj                = resp2.json()
             
-    except Exception as Exc:
-        if verbosity > 1:
-            import traceback;traceback.print_exc()
-            if clear_bad_escapes:
-                print('Inspect resp2.text.replace("\\:", "|||||")')
-            else:
-                print('Inspect resp2.text:')
-            import ipdb;ipdb.set_trace()
-        raise
-        
     if verbosity > 1:
         if verbosity > 8:
             print(json.dumps(rj, indent=4))
