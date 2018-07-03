@@ -352,6 +352,9 @@ def update_policy(policy_id, categories=None, tags=None,
             rjd["inputSettings"]["type"], rjd["type"], resp.status_code)) 
         if verbosity > 5:
             print(json.dumps(resp.json(), indent=4))
+            if verbosity > 10:
+                print("Inspect resp:")
+                import ipdb;ipdb.set_trace()
     
     return resp.json()
 
