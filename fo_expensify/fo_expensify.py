@@ -147,7 +147,7 @@ def export_and_download(report_states=None, limit=None,
 
     if verbosity > 6:
         print(resp.text)
-    if verbosity > 1:
+    if verbosity > 2:
         print("Expensify {} {} call response status code: {}".format(
             rjd["inputSettings"]["type"], rjd["type"], resp.status_code))
         
@@ -192,7 +192,7 @@ def export_and_download(report_states=None, limit=None,
     else:
         rj                = resp2.json()
             
-    if verbosity > 1:
+    if verbosity > 2:
         if verbosity > 8:
             print(json.dumps(rj, indent=4))
         print("Expensify {} call response status code: {}".format(
@@ -230,7 +230,7 @@ def get_policies(policy_ids=None, user_email=None,
 
     resp = requests.post(URL, data=data)
 
-    if verbosity > 1:
+    if verbosity > 2:
         print("Expensify {} {} call response status code: {}".format(
             rjd["inputSettings"]["type"], rjd["type"], resp.status_code)) 
         if verbosity > 6:
@@ -273,7 +273,7 @@ def get_policy_list(admin_only=True, user_email=None, verbosity=0,
             print(json.dumps(resp.json(), indent=4))
             raise Exception('Not finding "policyList" in resp.json()!')
         
-    if verbosity > 1:
+    if verbosity > 2:
         print("Expensify {} {} call response status code: {}".format(
             rjd["inputSettings"]["type"], rjd["type"], resp.status_code)) 
         if verbosity > 5:
@@ -302,7 +302,7 @@ def update_employees(policy_id, data_path, verbosity=0, **credentials):
     
     resp = requests.post(URL, data=data, files=files)
 
-    if verbosity > 1:
+    if verbosity > 2:
         print("Expensify {} {} call response status code: {}".format(
             rjd["inputSettings"]["type"], rjd["type"], resp.status_code)) 
         if verbosity > 3:
@@ -347,7 +347,7 @@ def update_policy(policy_id, categories=None, tags=None,
     
     resp = requests.post(URL, data=data)
 
-    if verbosity > 1:
+    if verbosity > 2:
         print("Expensify {} {} call response status code: {}".format(
             rjd["inputSettings"]["type"], rjd["type"], resp.status_code)) 
         if verbosity > 5:
@@ -391,7 +391,7 @@ def set_report_status(report_ids, status="REIMBURSED", verbosity=0,
         for skip_dict in skipped_reports:
             print(skip_dict['reportID'],"-",skip_dict['reason'])
 
-    if verbosity > 1:
+    if verbosity > 2:
         print("Expensify report-status-updater call status code: {}".format(
             resp.status_code))
             
