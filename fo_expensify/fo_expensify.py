@@ -31,7 +31,7 @@ DEFAULT_JSON_TEMPLATE = """
 ]
 """
 
-def retry(max_tries=10, delay_secs=0.2):
+def retry(max_tries=3, delay_secs=1):
     """
     Produces a decorator which tries effectively the function it decorates
      a given number of times. This is meant to (considerately) address
@@ -188,7 +188,18 @@ def export_and_download(report_states=None, limit=None,
         #  literal colon. Instead, we make it something that a downstream
         #  process is VERY unlikely to mistake for anything but a colon...
         colon_cleansed_rj = resp2.text.replace("\\:", "|||||")
-        rj                = json.loads(colon_cleansed_rj)
+        try:
+            rj                = json.loads(colon_cleansed_rj)
+        except ValueError as ve:
+            print(ve.message)
+            bad_char_ix = int(ve.message.split("char ")[1][:-1])
+            print(colon_cleansed_rj[
+                bad_char_ix-1000:
+                bad_char_ix+1000])
+            if verbosity > 2:
+                print("BAD CHARACTER IN A REPORT?")
+                import ipdb;ipdb.set_trace()
+            raise
     else:
         rj                = resp2.json()
             
