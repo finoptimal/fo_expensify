@@ -58,8 +58,8 @@ def retry(max_tries=3, delay_secs=1):
                     tries    -= 1
                     attempts += 1
                     if tries <= 0:
-                        print("Failing after {} tries!".format(attempts))
-                        raise
+                        raise Exception(
+                            "Failing after {} tries!".format(attempts))
                     # back off as failures accumulate in case it's transient
                     time.sleep(delay * attempts)
                     
@@ -137,11 +137,14 @@ def export_and_download(report_states=None, limit=None,
     data = {"requestJobDescription" : json.dumps(rjd, indent=4),
             "template"              : template}
 
+    # Verbose Job Description / JSON Dict?
+    vjd = rjd.copy()
+    del(vjd["credentials"])
+    dumped_vjd = json.dumps(vjd, indent=4)
+    
     if verbosity > 2:
         print("Expensify JobDescription (sans creds):")
-        vjd = rjd.copy()
-        del(vjd["credentials"])
-        print(json.dumps(vjd, indent=4))
+        print(dumped_vjd)
     
     resp = requests.post(URL, data=data)
 
@@ -152,10 +155,14 @@ def export_and_download(report_states=None, limit=None,
             rjd["inputSettings"]["type"], rjd["type"], resp.status_code))
         
     if resp.text[0] == "{" and resp.json().get("responseCode") == 500:
+        """
         if verbosity > 1:
             print(resp.text)
         return {}
-
+        """
+        msg = "\n\n".join([dumped_vjd, resp.text])
+        raise Exception(msg)
+        
     rjd2 = {"type"        : "download",
             "credentials" : credentials,
             "fileName"    : resp.text}
@@ -188,18 +195,8 @@ def export_and_download(report_states=None, limit=None,
         #  literal colon. Instead, we make it something that a downstream
         #  process is VERY unlikely to mistake for anything but a colon...
         colon_cleansed_rj = resp2.text.replace("\\:", "|||||")
-        try:
-            rj                = json.loads(colon_cleansed_rj)
-        except ValueError as ve:
-            print(ve.message)
-            bad_char_ix = int(ve.message.split("char ")[1][:-1])
-            print(colon_cleansed_rj[
-                bad_char_ix-1000:
-                bad_char_ix+1000])
-            if verbosity > 2:
-                print("BAD CHARACTER IN A REPORT?")
-                import ipdb;ipdb.set_trace()
-            raise
+        rj                = json.loads(colon_cleansed_rj)
+
     else:
         rj                = resp2.json()
             
@@ -281,8 +278,10 @@ def get_policy_list(admin_only=True, user_email=None, verbosity=0,
         time.sleep(2 * times_tried) # Back off a bit...
         
         if times_tried >= MAX_TRIES:
-            print(json.dumps(resp.json(), indent=4))
-            raise Exception('Not finding "policyList" in resp.json()!')
+            msg = "\n\n".join([
+                json.dumps(resp.json(), indent=4),
+                'Not finding "policyList" in resp.json()!'])
+            raise Exception(msg)
         
     if verbosity > 2:
         print("Expensify {} {} call response status code: {}".format(
