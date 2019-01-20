@@ -145,14 +145,19 @@ def export_and_download(report_states=None, limit=None,
     if verbosity > 2:
         print("Expensify JobDescription (sans creds):")
         print(dumped_vjd)
-    
-    resp = requests.post(URL, data=data)
 
+    # Start Time
+    st   = time.time()
+    resp = requests.post(URL, data=data)
+    # Call Time
+    ct   = time.time() - st
+    
     if verbosity > 6:
         print(resp.text)
     if verbosity > 2:
-        print("Expensify {} {} call response status code: {}".format(
-            rjd["inputSettings"]["type"], rjd["type"], resp.status_code))
+        print("Expensify {} {} call response status code: {} ({})".format(
+            rjd["inputSettings"]["type"], rjd["type"], resp.status_code,
+            "{:,.0f} seconds".format(ct)))
         
     if resp.text[0] == "{" and resp.json().get("responseCode") == 500:
         """
@@ -175,7 +180,11 @@ def export_and_download(report_states=None, limit=None,
         del(vjd2["credentials"])
         print(json.dumps(vjd2, indent=4))
 
+    # Start Time
+    st    = time.time()
     resp2 = requests.post(URL, data=data2)
+    # Call Time
+    ct    = time.time() - st
 
     if file_extension.replace(".", "").lower() == "pdf":
         # Just save and return the path
@@ -203,8 +212,8 @@ def export_and_download(report_states=None, limit=None,
     if verbosity > 2:
         if verbosity > 8:
             print(json.dumps(rj, indent=4))
-        print("Expensify {} call response status code: {}".format(
-            rjd2["type"], resp2.status_code))
+        print("Expensify {} call response status code: {} ({})".format(
+            rjd2["type"], resp2.status_code, "{:,.0f} seconds".format(ct)))
         if verbosity > 10:
             print("Inspect resp2.text, rj:")
             import ipdb;ipdb.set_trace()
@@ -236,11 +245,16 @@ def get_policies(policy_ids=None, user_email=None,
 
     data = {"requestJobDescription" : json.dumps(rjd, indent=4)}
 
+    # Start Time
+    st    = time.time()
     resp = requests.post(URL, data=data)
+    # Call Time
+    ct    = time.time() - st
 
     if verbosity > 2:
-        print("Expensify {} {} call response status code: {}".format(
-            rjd["inputSettings"]["type"], rjd["type"], resp.status_code)) 
+        print("Expensify {} {} call response status code: {} ({})".format(
+            rjd["inputSettings"]["type"], rjd["type"], resp.status_code,
+            "{:,.0f} seconds".format(ct))) 
         if verbosity > 6:
             print(json.dumps(resp.json(), indent=4))
     
@@ -270,7 +284,11 @@ def get_policy_list(admin_only=True, user_email=None, verbosity=0,
     #  will sufficiently wait out.
     times_tried = 0
     while True:
+        # Start Time
+        st   = time.time()
         resp = requests.post(URL, data=data)
+        # Call Time
+        ct   = time.time() - st
         if "policyList" in resp.json():
             break
 
@@ -284,8 +302,9 @@ def get_policy_list(admin_only=True, user_email=None, verbosity=0,
             raise Exception(msg)
         
     if verbosity > 2:
-        print("Expensify {} {} call response status code: {}".format(
-            rjd["inputSettings"]["type"], rjd["type"], resp.status_code)) 
+        print("Expensify {} {} call response status code: {} ({})".format(
+            rjd["inputSettings"]["type"], rjd["type"], resp.status_code,
+            "{:,.0f} seconds".format(ct))) 
         if verbosity > 5:
             print(json.dumps(resp.json(), indent=4))
     
@@ -309,12 +328,17 @@ def update_employees(policy_id, data_path, verbosity=0, **credentials):
         "requestJobDescription" : json.dumps(rjd, indent=4),}
     files = {
         "data" : ("employees.csv", open(data_path, "r")),}
-    
-    resp = requests.post(URL, data=data, files=files)
 
+    # Start Time
+    st   = time.time()
+    resp = requests.post(URL, data=data, files=files)
+    # Call Time
+    ct   = time.time() - st
+    
     if verbosity > 2:
-        print("Expensify {} {} call response status code: {}".format(
-            rjd["inputSettings"]["type"], rjd["type"], resp.status_code)) 
+        print("Expensify {} {} call response status code: {} ({})".format(
+            rjd["inputSettings"]["type"], rjd["type"], resp.status_code,
+            "{:,.0f} seconds".format(ct))) 
         if verbosity > 3:
             print(json.dumps(resp.json(), indent=4))
     
@@ -354,12 +378,17 @@ def update_policy(policy_id, categories=None, tags=None,
             
     data  = {
         "requestJobDescription" : json.dumps(rjd, indent=4),}
-    
-    resp = requests.post(URL, data=data)
 
+    # Start Time
+    st   = time.time()
+    resp = requests.post(URL, data=data)
+    # Call Time
+    ct   = time.time() - st
+    
     if verbosity > 2:
-        print("Expensify {} {} call response status code: {}".format(
-            rjd["inputSettings"]["type"], rjd["type"], resp.status_code)) 
+        print("Expensify {} {} call response status code: {} ({})".format(
+            rjd["inputSettings"]["type"], rjd["type"], resp.status_code,
+            "{:,.0f} seconds".format(ct)))
         if verbosity > 5:
             print(json.dumps(resp.json(), indent=4))
             if verbosity > 10:
@@ -392,7 +421,12 @@ def set_report_status(report_ids, status="REIMBURSED", verbosity=0,
         }
     }, indent=4)}
 
+    # Start Time
+    st   = time.time()
     resp = requests.post(URL, data=data)
+    # Call Time
+    ct   = time.time() - st
+
     rj   = resp.json()
 
     if "skippedReports" in rj:
@@ -402,7 +436,8 @@ def set_report_status(report_ids, status="REIMBURSED", verbosity=0,
             print(skip_dict['reportID'],"-",skip_dict['reason'])
 
     if verbosity > 2:
-        print("Expensify report-status-updater call status code: {}".format(
-            resp.status_code))
+        print("Expensify report-status-updater call status",
+              "code: {} ({})".format(
+                  resp.status_code, "{:,.0f} seconds".format(ct)))
             
     return rj
