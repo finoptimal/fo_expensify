@@ -148,7 +148,7 @@ def export_and_download(report_states=None, limit=None,
 
     # Start Time
     st   = time.time()
-    resp = requests.post(URL, data=data)
+    resp = requests.post(URL, data=data, timeout=240)
     # Call Time
     ct   = time.time() - st
     
@@ -182,7 +182,7 @@ def export_and_download(report_states=None, limit=None,
 
     # Start Time
     st    = time.time()
-    resp2 = requests.post(URL, data=data2)
+    resp2 = requests.post(URL, data=data2, timeout=240)
     # Call Time
     ct    = time.time() - st
 
@@ -247,7 +247,7 @@ def get_policies(policy_ids=None, user_email=None,
 
     # Start Time
     st    = time.time()
-    resp = requests.post(URL, data=data)
+    resp = requests.post(URL, data=data, timeout=240)
     # Call Time
     ct    = time.time() - st
 
@@ -286,7 +286,7 @@ def get_policy_list(admin_only=True, user_email=None, verbosity=0,
     while True:
         # Start Time
         st   = time.time()
-        resp = requests.post(URL, data=data)
+        resp = requests.post(URL, data=data, timeout=240)
         # Call Time
         ct   = time.time() - st
         if "policyList" in resp.json():
@@ -331,7 +331,7 @@ def update_employees(policy_id, data_path, verbosity=0, **credentials):
 
     # Start Time
     st   = time.time()
-    resp = requests.post(URL, data=data, files=files)
+    resp = requests.post(URL, data=data, files=files, timeout=240)
     # Call Time
     ct   = time.time() - st
     
@@ -381,7 +381,7 @@ def update_policy(policy_id, categories=None, tags=None,
 
     # Start Time
     st   = time.time()
-    resp = requests.post(URL, data=data)
+    resp = requests.post(URL, data=data, timeout=240)
     # Call Time
     ct   = time.time() - st
     
@@ -423,7 +423,7 @@ def set_report_status(report_ids, status="REIMBURSED", verbosity=0,
 
     # Start Time
     st   = time.time()
-    resp = requests.post(URL, data=data)
+    resp = requests.post(URL, data=data, timeout=240)
     # Call Time
     ct   = time.time() - st
 
