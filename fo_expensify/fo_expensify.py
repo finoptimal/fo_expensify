@@ -58,8 +58,11 @@ def retry(max_tries=3, delay_secs=1):
                     tries    -= 1
                     attempts += 1
                     if tries <= 0:
+                        """
                         raise Exception(
                             "Failing after {} tries!".format(attempts))
+                        """
+                        raise
                     # back off as failures accumulate in case it's transient
                     time.sleep(delay * attempts)
                     
