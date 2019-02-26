@@ -1,4 +1,4 @@
-from __future__ import print_function
+
 """
 Wrapper around this REST API:
 
@@ -91,7 +91,7 @@ def export_and_download(report_states=None, limit=None,
         "outputSettings" : {"fileExtension" : file_extension.replace(".", "")}}
 
     if report_states:
-        if isinstance(report_states, (str, unicode)):
+        if isinstance(report_states, str):
             report_states                   = report_states.split(",")
         rjd["inputSettings"]["reportState"] = ",".join(report_states)
 
@@ -110,15 +110,15 @@ def export_and_download(report_states=None, limit=None,
         rjd["inputSettings"]["filters"]["approvedAfter"] = str(approved_after)
 
     if report_ids:
-        if isinstance(report_ids, (str, unicode)):
+        if isinstance(report_ids, str):
             report_ids = report_ids.split(",")
-        elif isinstance(report_ids, (float, long, int)):
+        elif isinstance(report_ids, (float, int)):
             report_ids = [str(int(report_ids))]
         rjd["inputSettings"]["filters"]["reportIDList"] = ",".join(
             [str(int(rid)) for rid in report_ids])
             
     if policy_ids:
-        if isinstance(policy_ids, (str, unicode)):
+        if isinstance(policy_ids, str):
             policy_ids = policy_ids.split(",")
         rjd["inputSettings"]["filters"]["policyIDList"] = ",".join(policy_ids)
 
@@ -229,7 +229,7 @@ def get_policies(policy_ids=None, user_email=None,
     """
     https://integrations.expensify.com/Integration-Server/doc/#policy-getter
     """
-    if isinstance(policy_ids, (str, unicode)):
+    if isinstance(policy_ids, str):
         policy_ids = policy_ids.split(",")
     elif not policy_ids:
         policy_ids = []
