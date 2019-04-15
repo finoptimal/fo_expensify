@@ -191,32 +191,34 @@ def export_and_download(report_states=None, limit=None,
         destination_handle = open(download_path, 'wb')
         for line in resp2.content:
             destination_handle.write(line)
-
+        
         return download_path
     
-    if clear_bad_escapes:
-        # Expensify uses colons as tag delimimters. If there's a colon in
-        #  the tag name, it "escapes" them with a backslash. That backslash,
-        #  which makes for invalid json because it's not actually escaping
-        #  anything, will blow up json.loads, so it needs to get gone.
-        # We don't turn \: into just :, though, because then a downstream
-        #  process can't tell if it's supposed to be a delimiter or a
-        #  literal colon. Instead, we make it something that a downstream
-        #  process is VERY unlikely to mistake for anything but a colon...
-        colon_cleansed_rj = resp2.text.replace("\\:", "|||||")
-        rj                = json.loads(colon_cleansed_rj)
-
     else:
-        rj                = resp2.json()
-            
-    if verbosity > 2:
-        if verbosity > 8:
-            print(json.dumps(rj, indent=4))
-        print("Expensify {} call response status code: {} ({})".format(
-            rjd2["type"], resp2.status_code, "{:,.0f} seconds".format(ct)))
-        if verbosity > 10:
-            print("Inspect resp2.text, rj:")
-            import ipdb;ipdb.set_trace()
+        # This is a JSON response, then...
+        if clear_bad_escapes:
+            # Expensify uses colons as tag delimimters. If there's a colon in
+            #  the tag name, it "escapes" them with a backslash. That backslash,
+            #  which makes for invalid json because it's not actually escaping
+            #  anything, will blow up json.loads, so it needs to get gone.
+            # We don't turn \: into just :, though, because then a downstream
+            #  process can't tell if it's supposed to be a delimiter or a
+            #  literal colon. Instead, we make it something that a downstream
+            #  process is VERY unlikely to mistake for anything but a colon...
+            colon_cleansed_rj = resp2.text.replace("\\:", "|||||")
+            rj                = json.loads(colon_cleansed_rj)
+
+        else:
+            rj                = resp2.json()
+
+        if verbosity > 2:
+            if verbosity > 8:
+                print(json.dumps(rj, indent=4))
+            print("Expensify {} call response status code: {} ({})".format(
+                rjd2["type"], resp2.status_code, "{:,.0f} seconds".format(ct)))
+            if verbosity > 10:
+                print("Inspect resp2.text, rj:")
+                import ipdb;ipdb.set_trace()
 
     return rj
 
