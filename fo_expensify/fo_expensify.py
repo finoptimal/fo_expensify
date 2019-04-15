@@ -192,25 +192,27 @@ def export_and_download(report_states=None, limit=None,
     if file_extension.replace(".", "").lower() == "pdf":
         # Just save and return the path
         destination_handle = open(download_path, 'wb')
-        for line in resp2.content:
-            destination_handle.write(line)
+        with open(download_path, 'wb') as destination_handle:
+            destination_handle.write(resp2.content)
 
         return download_path
-    
-    if clear_bad_escapes:
-        # Expensify uses colons as tag delimimters. If there's a colon in
-        #  the tag name, it "escapes" them with a backslash. That backslash,
-        #  which makes for invalid json because it's not actually escaping
-        #  anything, will blow up json.loads, so it needs to get gone.
-        # We don't turn \: into just :, though, because then a downstream
-        #  process can't tell if it's supposed to be a delimiter or a
-        #  literal colon. Instead, we make it something that a downstream
-        #  process is VERY unlikely to mistake for anything but a colon...
-        colon_cleansed_rj = resp2.text.replace("\\:", "|||||")
-        rj                = json.loads(colon_cleansed_rj)
 
     else:
-        rj                = resp2.json()
+        # This is a JSON response, then...
+        if clear_bad_escapes:
+            # Expensify uses colons as tag delimimters. If there's a colon in
+            #  the tag name, it "escapes" them with a backslash. That backslash,
+            #  which makes for invalid json because it's not actually escaping
+            #  anything, will blow up json.loads, so it needs to get gone.
+            # We don't turn \: into just :, though, because then a downstream
+            #  process can't tell if it's supposed to be a delimiter or a
+            #  literal colon. Instead, we make it something that a downstream
+            #  process is VERY unlikely to mistake for anything but a colon...
+            colon_cleansed_rj = resp2.text.replace("\\:", "|||||")
+            rj                = json.loads(colon_cleansed_rj)
+
+        else:
+            rj                = resp2.json()
             
     if verbosity > 2:
         if verbosity > 8:
