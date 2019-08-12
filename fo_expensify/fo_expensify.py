@@ -208,7 +208,10 @@ def export_and_download(report_states=None, limit=None,
             #  process can't tell if it's supposed to be a delimiter or a
             #  literal colon. Instead, we make it something that a downstream
             #  process is VERY unlikely to mistake for anything but a colon...
-            colon_cleansed_rj = resp2.text.replace("\\:", "|||||")
+            colon_cleansed_rj = resp2.text.replace("\\:", "|||||").replace(
+                # Also replace lingering LITERAL backslashes,
+                #  to address, e.g., #65403
+                "\\", "")
             rj                = json.loads(colon_cleansed_rj)
 
         else:
