@@ -1,11 +1,6 @@
-
-"""
-Wrapper around this REST API:
-
-https://integrations.expensify.com/Integration-Server/doc/
-
-Copyright 2017 FinOptimal. All rights reserved.
-"""
+# Wrapper around this REST API:
+#  https://integrations.expensify.com/Integration-Server/doc/
+#  Copyright 2017-2019 FinOptimal. All rights reserved.
 
 import json, requests, time
 
@@ -208,10 +203,8 @@ def export_and_download(report_states=None, limit=None,
             #  process can't tell if it's supposed to be a delimiter or a
             #  literal colon. Instead, we make it something that a downstream
             #  process is VERY unlikely to mistake for anything but a colon...
-            colon_cleansed_rj = resp2.text.replace("\\:", "|||||").replace(
-                # Also replace lingering LITERAL backslashes,
-                #  to address, e.g., #65403
-                "\\", "")
+            colon_cleansed_rj = re.sub(r"\\*:", "|||||", resp2.text)
+            #colon_cleansed_rj = resp2.text.replace("\\:", "|||||") #65403
             rj                = json.loads(colon_cleansed_rj)
 
         else:
