@@ -158,11 +158,6 @@ def export_and_download(report_states=None, limit=None,
             "{:,.0f} seconds".format(ct)))
         
     if resp.text[0] == "{" and resp.json().get("responseCode") == 500:
-        """
-        if verbosity > 1:
-            print(resp.text)
-        return {}
-        """
         msg = "\n\n".join([dumped_vjd, resp.text])
         raise Exception(msg)
         
@@ -246,9 +241,18 @@ def get_policies(policy_ids=None, user_email=None,
 
     data = {"requestJobDescription" : json.dumps(rjd, indent=4)}
 
+    # Verbose Job Description / JSON Dict?
+    vjd = rjd.copy()
+    del(vjd["credentials"])
+    dumped_vjd = json.dumps(vjd, indent=4)
+    
+    if verbosity > 2:
+        print("Expensify JobDescription (sans creds):")
+        print(dumped_vjd)
+    
     # Start Time
     st    = time.time()
-    resp = requests.post(URL, data=data, timeout=240)
+    resp = requests.post(URL, data=data, timeout=60)
     # Call Time
     ct    = time.time() - st
 
@@ -277,31 +281,37 @@ def get_policy_list(admin_only=True, user_email=None, verbosity=0,
             "adminOnly" : admin_only}}
 
     if user_email:
-        rdj["inputSettings"]["userEmail"] = user_email
+        rjd["inputSettings"]["userEmail"] = user_email
 
+    # Verbose Job Description / JSON Dict?
+    vjd = rjd.copy()
+    del(vjd["credentials"])
+    dumped_vjd = json.dumps(vjd, indent=4)
+    
+    if verbosity > 2:
+        print("Expensify JobDescription (sans creds):")
+        print(dumped_vjd)
+            
     data = {"requestJobDescription" : json.dumps(rjd, indent=4)}
 
     # Occasionally there are transient API problems that a tinsure of time
     #  will sufficiently wait out.
     times_tried = 0
-    while True:
-        # Start Time
-        st   = time.time()
-        resp = requests.post(URL, data=data, timeout=240)
-        # Call Time
-        ct   = time.time() - st
-        if "policyList" in resp.json():
-            break
 
-        times_tried += 1
-        time.sleep(2 * times_tried) # Back off a bit...
-        
-        if times_tried >= MAX_TRIES:
-            msg = "\n\n".join([
-                json.dumps(resp.json(), indent=4),
-                'Not finding "policyList" in resp.json()!'])
-            raise Exception(msg)
-        
+    # Start Time
+    st   = time.time()
+    resp = requests.post(URL, data=data, timeout=60)
+    # Call Time
+    ct   = time.time() - st
+
+    if not resp.status_code == 200 or not "policyList" in resp.json():
+        msg = "\n\n".join([
+            f"policyList getter failure ({resp.status_code}):",
+            resp.text])
+        if verbosity > 3:
+            print(msg)
+        raise Exception(msg)
+    
     if verbosity > 2:
         print("Expensify {} {} call response status code: {} ({})".format(
             rjd["inputSettings"]["type"], rjd["type"], resp.status_code,
@@ -332,7 +342,7 @@ def update_employees(policy_id, data_path, verbosity=0, **credentials):
 
     # Start Time
     st   = time.time()
-    resp = requests.post(URL, data=data, files=files, timeout=240)
+    resp = requests.post(URL, data=data, files=files, timeout=60)
     # Call Time
     ct   = time.time() - st
     
@@ -382,7 +392,7 @@ def update_policy(policy_id, categories=None, tags=None,
 
     # Start Time
     st   = time.time()
-    resp = requests.post(URL, data=data, timeout=240)
+    resp = requests.post(URL, data=data, timeout=60)
     # Call Time
     ct   = time.time() - st
     
@@ -424,7 +434,7 @@ def set_report_status(report_ids, status="REIMBURSED", verbosity=0,
 
     # Start Time
     st   = time.time()
-    resp = requests.post(URL, data=data, timeout=240)
+    resp = requests.post(URL, data=data, timeout=60)
     # Call Time
     ct   = time.time() - st
 
