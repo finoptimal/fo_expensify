@@ -135,6 +135,6 @@ if __name__=='__main__':
     end = time.time()
 
     if args.verbosity > 0:
-        print "Running time: {:.2f} seconds.".format(end-start)
+        print("Running time: {:.2f} seconds.".format(end-start))
         if args.verbosity > 5:
             import ipdb;ipdb.set_trace()

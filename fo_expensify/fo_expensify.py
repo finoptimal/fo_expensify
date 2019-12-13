@@ -1,13 +1,8 @@
-from __future__ import print_function
-"""
-Wrapper around this REST API:
+# Wrapper around this REST API:
+#  https://integrations.expensify.com/Integration-Server/doc/
+#  Copyright 2017-2019 FinOptimal. All rights reserved.
 
-https://integrations.expensify.com/Integration-Server/doc/
-
-Copyright 2017 FinOptimal. All rights reserved.
-"""
-
-import json, requests, time
+import json, re, requests, time
 
 URL = "https://integrations.expensify.com/Integration-Server/" + \
       "ExpensifyIntegrations"
@@ -91,7 +86,7 @@ def export_and_download(report_states=None, limit=None,
         "outputSettings" : {"fileExtension" : file_extension.replace(".", "")}}
 
     if report_states:
-        if isinstance(report_states, (str, unicode)):
+        if isinstance(report_states, str):
             report_states                   = report_states.split(",")
         rjd["inputSettings"]["reportState"] = ",".join(report_states)
 
@@ -110,15 +105,15 @@ def export_and_download(report_states=None, limit=None,
         rjd["inputSettings"]["filters"]["approvedAfter"] = str(approved_after)
 
     if report_ids:
-        if isinstance(report_ids, (str, unicode)):
+        if isinstance(report_ids, str):
             report_ids = report_ids.split(",")
-        elif isinstance(report_ids, (float, long, int)):
+        elif isinstance(report_ids, (float, int)):
             report_ids = [str(int(report_ids))]
         rjd["inputSettings"]["filters"]["reportIDList"] = ",".join(
             [str(int(rid)) for rid in report_ids])
             
     if policy_ids:
-        if isinstance(policy_ids, (str, unicode)):
+        if isinstance(policy_ids, str):
             policy_ids = policy_ids.split(",")
         rjd["inputSettings"]["filters"]["policyIDList"] = ",".join(policy_ids)
 
@@ -163,11 +158,6 @@ def export_and_download(report_states=None, limit=None,
             "{:,.0f} seconds".format(ct)))
         
     if resp.text[0] == "{" and resp.json().get("responseCode") == 500:
-        """
-        if verbosity > 1:
-            print(resp.text)
-        return {}
-        """
         msg = "\n\n".join([dumped_vjd, resp.text])
         raise Exception(msg)
         
@@ -192,11 +182,11 @@ def export_and_download(report_states=None, limit=None,
     if file_extension.replace(".", "").lower() == "pdf":
         # Just save and return the path
         destination_handle = open(download_path, 'wb')
-        for line in resp2.content:
-            destination_handle.write(line)
-        
+        with open(download_path, 'wb') as destination_handle:
+            destination_handle.write(resp2.content)
+
         return download_path
-    
+
     else:
         # This is a JSON response, then...
         if clear_bad_escapes:
@@ -208,20 +198,21 @@ def export_and_download(report_states=None, limit=None,
             #  process can't tell if it's supposed to be a delimiter or a
             #  literal colon. Instead, we make it something that a downstream
             #  process is VERY unlikely to mistake for anything but a colon...
-            colon_cleansed_rj = resp2.text.replace("\\:", "|||||")
+            colon_cleansed_rj = re.sub(r"\\\\*:", "|||||", resp2.text)
+            #colon_cleansed_rj = resp2.text.replace("\\:", "|||||") #65403
             rj                = json.loads(colon_cleansed_rj)
 
         else:
             rj                = resp2.json()
-
-        if verbosity > 2:
-            if verbosity > 8:
-                print(json.dumps(rj, indent=4))
-            print("Expensify {} call response status code: {} ({})".format(
-                rjd2["type"], resp2.status_code, "{:,.0f} seconds".format(ct)))
-            if verbosity > 10:
-                print("Inspect resp2.text, rj:")
-                import ipdb;ipdb.set_trace()
+            
+    if verbosity > 2:
+        if verbosity > 8:
+            print(json.dumps(rj, indent=4))
+        print("Expensify {} call response status code: {} ({})".format(
+            rjd2["type"], resp2.status_code, "{:,.0f} seconds".format(ct)))
+        if verbosity > 10:
+            print("Inspect resp2.text, rj:")
+            import ipdb;ipdb.set_trace()
 
     return rj
 
@@ -231,7 +222,7 @@ def get_policies(policy_ids=None, user_email=None,
     """
     https://integrations.expensify.com/Integration-Server/doc/#policy-getter
     """
-    if isinstance(policy_ids, (str, unicode)):
+    if isinstance(policy_ids, str):
         policy_ids = policy_ids.split(",")
     elif not policy_ids:
         policy_ids = []
@@ -250,9 +241,18 @@ def get_policies(policy_ids=None, user_email=None,
 
     data = {"requestJobDescription" : json.dumps(rjd, indent=4)}
 
+    # Verbose Job Description / JSON Dict?
+    vjd = rjd.copy()
+    del(vjd["credentials"])
+    dumped_vjd = json.dumps(vjd, indent=4)
+    
+    if verbosity > 2:
+        print("Expensify JobDescription (sans creds):")
+        print(dumped_vjd)
+    
     # Start Time
     st    = time.time()
-    resp = requests.post(URL, data=data, timeout=240)
+    resp = requests.post(URL, data=data, timeout=60)
     # Call Time
     ct    = time.time() - st
 
@@ -281,31 +281,37 @@ def get_policy_list(admin_only=True, user_email=None, verbosity=0,
             "adminOnly" : admin_only}}
 
     if user_email:
-        rdj["inputSettings"]["userEmail"] = user_email
+        rjd["inputSettings"]["userEmail"] = user_email
 
+    # Verbose Job Description / JSON Dict?
+    vjd = rjd.copy()
+    del(vjd["credentials"])
+    dumped_vjd = json.dumps(vjd, indent=4)
+    
+    if verbosity > 2:
+        print("Expensify JobDescription (sans creds):")
+        print(dumped_vjd)
+            
     data = {"requestJobDescription" : json.dumps(rjd, indent=4)}
 
     # Occasionally there are transient API problems that a tinsure of time
     #  will sufficiently wait out.
     times_tried = 0
-    while True:
-        # Start Time
-        st   = time.time()
-        resp = requests.post(URL, data=data, timeout=240)
-        # Call Time
-        ct   = time.time() - st
-        if "policyList" in resp.json():
-            break
 
-        times_tried += 1
-        time.sleep(2 * times_tried) # Back off a bit...
-        
-        if times_tried >= MAX_TRIES:
-            msg = "\n\n".join([
-                json.dumps(resp.json(), indent=4),
-                'Not finding "policyList" in resp.json()!'])
-            raise Exception(msg)
-        
+    # Start Time
+    st   = time.time()
+    resp = requests.post(URL, data=data, timeout=60)
+    # Call Time
+    ct   = time.time() - st
+
+    if not resp.status_code == 200 or not "policyList" in resp.json():
+        msg = "\n\n".join([
+            f"policyList getter failure ({resp.status_code}):",
+            resp.text])
+        if verbosity > 3:
+            print(msg)
+        raise Exception(msg)
+    
     if verbosity > 2:
         print("Expensify {} {} call response status code: {} ({})".format(
             rjd["inputSettings"]["type"], rjd["type"], resp.status_code,
@@ -336,7 +342,7 @@ def update_employees(policy_id, data_path, verbosity=0, **credentials):
 
     # Start Time
     st   = time.time()
-    resp = requests.post(URL, data=data, files=files, timeout=240)
+    resp = requests.post(URL, data=data, files=files, timeout=60)
     # Call Time
     ct   = time.time() - st
     
@@ -386,7 +392,7 @@ def update_policy(policy_id, categories=None, tags=None,
 
     # Start Time
     st   = time.time()
-    resp = requests.post(URL, data=data, timeout=240)
+    resp = requests.post(URL, data=data, timeout=60)
     # Call Time
     ct   = time.time() - st
     
@@ -428,7 +434,7 @@ def set_report_status(report_ids, status="REIMBURSED", verbosity=0,
 
     # Start Time
     st   = time.time()
-    resp = requests.post(URL, data=data, timeout=240)
+    resp = requests.post(URL, data=data, timeout=60)
     # Call Time
     ct   = time.time() - st
 
