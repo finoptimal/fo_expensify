@@ -384,7 +384,12 @@ def update_policy(policy_id, categories=None, tags=None,
     if tags:
         if tags.get("source") == "file":
             raise NotImplementedError("Implement dependent-level tag updates!")
+        elif not "source" in tags:
+            tags["source"] = "inline"
 
+        if not "action" in tags:
+            tags["action"] = default_action
+        
         rjd["tags"] = tags
             
     data  = {
@@ -395,6 +400,16 @@ def update_policy(policy_id, categories=None, tags=None,
     resp = requests.post(URL, data=data, timeout=60)
     # Call Time
     ct   = time.time() - st
+
+    if not resp.status_code == 200:
+        raise Exception(resp.text)
+    
+    rj   = resp.json()
+
+    if len(rj.keys()) > 1 or not rj == {"responseCode" : 200}:
+        if verbosity > 2:
+            print(json.dumps(rj, indent=4))
+        raise Exception(rj)
     
     if verbosity > 2:
         print("Expensify {} {} call response status code: {} ({})".format(
