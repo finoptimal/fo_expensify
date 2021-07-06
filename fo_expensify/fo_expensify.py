@@ -26,89 +26,6 @@ DEFAULT_JSON_TEMPLATE = """
 ]
 """
 
-DEFAULT_REC_CSV_TEMPLATE = """
-<#-- Functions -->
-<#function quoteCsv string>
-   <#if isCsv && string?contains(",") && !string?starts_with("\"")>
-       <#return "\"" + string?replace("\"", "\\\"") + "\"">
-   </#if>
-    <#return string>
-</#function>
-<#function unescapeHtml string>
-    <#return string?replace("&lt;", "<")?replace("&gt;", ">")?replace("&amp;", "&")?replace("&quot;", "\"")?replace("&apos;", "'")>
-</#function>
-<#-- Header Line -->
-<#if addHeader>
-    Original Merchant,<#t>
-    Modified Merchant,<#t>
-    Posted date,<#t>
-    Sales date,<#t>
-    Modified Sales date,<#t>
-    Original Amount,<#t>
-    Modified Amount,<#t>
-    Currency,Split,<#t>
-    Category,<#t>
-    Tag,<#t>
-    Email,<#t>
-    Card name,<#t>
-    Expense status,<#t>
-    Report name,<#t>
-    Report status,<#t>
-    Submitted to,<#t>
-    Report URL,<#t>
-    Comment,<#t>
-    External ID,<#t>
-    Report ID<#lt>
-</#if>
-<#list cards as card, reports>
-    <#list reports as report>
-        <#list report.transactionList as transaction>
-            <#-- Assign an expense status based off of the report ID -->
-            <#if transaction.reportID lt 0>
-                <#assign status = "deleted">
-            <#elseif transaction.reportID gt 0>
-                <#assign status = "reported">
-            <#else>
-                <#assign status = "unreported">
-            </#if>
-            <#-- Do not print the modified created if it is the same as the original -->
-            <#if transaction.originalCreated == transaction.modifiedCreated>
-                <#assign modifiedCreated = "">
-            <#else>
-                <#assign modifiedCreated = transaction.modifiedCreated>
-            </#if>
-            <#-- Only print the reportID if it greater than 0 -->
-            <#if report.ID gt 0>
-                <#assign reportID = report.ID?c>
-            <#else>
-                <#assign reportID = "">
-            </#if>
-            ${quoteCsv(unescapeHtml(transaction.originalMerchant))},<#t>
-            ${quoteCsv(unescapeHtml(transaction.modifiedMerchant))},<#t>
-            ${transaction.posted},<#t>
-            ${transaction.originalCreated},<#t>
-            ${modifiedCreated},<#t>
-            ${(-transaction.originalAmount/100)?string("0.##")},<#t>
-            ${transaction.amountModified?then((-transaction.modifiedAmount/100)?string("0.##"), "")},<#t>
-            ${transaction.currency},<#t>
-            ${transaction.split?then("YES","NO")},<#t>
-            ${quoteCsv(unescapeHtml(transaction.category))},<#t>
-            ${quoteCsv(unescapeHtml(transaction.tag))},<#t>
-            ${card.owner},<#t>
-            ${quoteCsv(unescapeHtml(card.name))},<#t>
-            ${status},<#t>
-            ${quoteCsv(unescapeHtml(report.name))},<#t>
-            ${report.status!""},<#t>
-            ${report.managerEmail},<#t>
-            ${report.url},<#t>
-            ${quoteCsv(unescapeHtml(transaction.comment))},<#t>
-            ${quoteCsv(unescapeHtml(transaction.externalID))},<#t>
-            ${reportID}<#lt>
-        </#list>
-    </#list>
-</#list>
-"""
-
 def retry(max_tries=3, delay_secs=1):
     """
     Produces a decorator which tries effectively the function it decorates
@@ -297,7 +214,7 @@ def export_and_download_reports(
 
     return rj
 
-@retry()
+#@retry()
 def export_and_download_reconciliation(
         domain, start_date, end_date,
         reconciliation_type="Unreported", asynchronous=False,
@@ -346,8 +263,9 @@ def export_and_download_reconciliation(
     # Call Time
     ct   = time.time() - st
     
-    if verbosity > 6:
+    if verbosity > 7:
         print(resp.text)
+        import ipdb;ipdb.set_trace()
     if verbosity > 2:
         print("Expensify {} {} call response status code: {} ({})".format(
             rjd["inputSettings"]["type"], rjd["type"], resp.status_code,
@@ -359,7 +277,8 @@ def export_and_download_reconciliation(
     
     rjd2 = {"type"        : "download",
             "credentials" : credentials,
-            "fileName"    : resp.text}
+            "fileName"    : resp.json()["filename"],
+            "fileSystem"  : "reconciliation"}
 
     data2 = {"requestJobDescription" : json.dumps(rjd2, indent=4)}
 
@@ -372,6 +291,11 @@ def export_and_download_reconciliation(
     # Start Time
     st    = time.time()
     resp2 = requests.post(URL, data=data2, timeout=240)
+
+    if verbosity > 8:
+        print(resp2)
+        import ipdb;ipdb.set_trace()
+    
     # Call Time
     ct    = time.time() - st
 
@@ -384,26 +308,12 @@ def export_and_download_reconciliation(
         return download_path
 
     else:
-        # This is a JSON response, then...
-        if clear_bad_escapes:
-            # Expensify uses colons as tag delimimters. If there's a colon in
-            #  the tag name, it "escapes" them with a backslash. That backslash,
-            #  which makes for invalid json because it's not actually escaping
-            #  anything, will blow up json.loads, so it needs to get gone.
-            # We don't turn \: into just :, though, because then a downstream
-            #  process can't tell if it's supposed to be a delimiter or a
-            #  literal colon. Instead, we make it something that a downstream
-            #  process is VERY unlikely to mistake for anything but a colon...
-            colon_cleansed_rj = re.sub(r"\\\\*:", "|||||", resp2.text)
-            #colon_cleansed_rj = resp2.text.replace("\\:", "|||||") #65403
-            rj                = json.loads(colon_cleansed_rj)
-
-        else:
-            rj                = resp2.json()
+        rj = resp2.json()
             
     if verbosity > 2:
-        if verbosity > 8:
+        if verbosity > 6:
             print(json.dumps(rj, indent=4))
+            import ipdb;ipdb.set_trace()
         print("Expensify {} call response status code: {} ({})".format(
             rjd2["type"], resp2.status_code, "{:,.0f} seconds".format(ct)))
         if verbosity > 10:
