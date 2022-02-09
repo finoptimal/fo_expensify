@@ -36,7 +36,7 @@ DEFAULT_JSON_TEMPLATE = """
 """
 
 
-def post(data, files, timeout=60):
+def post(data, files=None, timeout=60):
     resp = requests.post(url=URL, data=data, files=files, timeout=timeout)
 
     expensify_logger.info(f"{resp.__hash__()} - {resp.status_code} {resp.reason} - "
