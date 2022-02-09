@@ -12,7 +12,7 @@ import time
 
 from finoptimal.logging import get_file_logger
 
-expensify_logger = get_file_logger('expensify')
+api_logger = get_file_logger('api/expensify')
 
 URL = "https://integrations.expensify.com/Integration-Server/ExpensifyIntegrations"
 
@@ -39,8 +39,8 @@ DEFAULT_JSON_TEMPLATE = """
 def post(data, files=None, timeout=60):
     resp = requests.post(url=URL, data=data, files=files, timeout=timeout)
 
-    expensify_logger.info(f"{resp.__hash__()} - {resp.status_code} {resp.reason} - "
-                          f"{resp.request.method.ljust(4)} {resp.url}")
+    api_logger.info(f"{resp.__hash__()} - {resp.status_code} {resp.reason} - "
+                    f"{resp.request.method.ljust(4)} {resp.url}")
     return resp
 
 
