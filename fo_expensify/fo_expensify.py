@@ -67,15 +67,12 @@ def retry(max_tries=3, delay_secs=1):
             while True:
                 try:
                     return retriable_function(*args, **kwargs)
-                    break
                 except:
                     tries -= 1
                     attempts += 1
+
                     if tries <= 0:
-                        """
-                        raise Exception(
-                            "Failing after {} tries!".format(attempts))
-                        """
+                        # raise Exception(f"Failing after {attempts} tries!")
                         raise
                     # back off as failures accumulate in case it's transient
                     time.sleep(delay * attempts)
@@ -100,9 +97,16 @@ def export_and_download_reports(
     rjd = {
         "type": "file",
         "credentials": credentials,
-        "onReceive": {"immediateResponse": ["returnRandomFileName"]},
-        "inputSettings": {"type": "combinedReportData", "filters": {}},
-        "outputSettings": {"fileExtension": file_extension.replace(".", "")}}
+        "onReceive": {
+            "immediateResponse": ["returnRandomFileName"]
+        },
+        "inputSettings": {
+            "type": "combinedReportData", "filters": {}
+        },
+        "outputSettings": {
+            "fileExtension": file_extension.replace(".", "")
+        }
+    }
 
     if report_states:
         if isinstance(report_states, str):
@@ -128,12 +132,14 @@ def export_and_download_reports(
             report_ids = report_ids.split(",")
         elif isinstance(report_ids, (float, int)):
             report_ids = [str(int(report_ids))]
+
         rjd["inputSettings"]["filters"]["reportIDList"] = ",".join(
             [str(int(rid)) for rid in report_ids])
 
     if policy_ids:
         if isinstance(policy_ids, str):
             policy_ids = policy_ids.split(",")
+
         rjd["inputSettings"]["filters"]["policyIDList"] = ",".join(policy_ids)
 
     if export_mark_filter:
@@ -142,8 +148,11 @@ def export_and_download_reports(
     if export_mark:
         # This wrapper doesn't support emailing yet...
         rjd["onFinish"] = [
-            {"actionName": "markAsExported",
-             "label": export_mark}]
+            {
+                "actionName": "markAsExported",
+                "label": export_mark
+            }
+        ]
 
     if file_base_name:
         rjd["outputSettings"]["fileBasename"] = file_base_name
@@ -151,8 +160,10 @@ def export_and_download_reports(
     if not template:
         template = DEFAULT_JSON_TEMPLATE
 
-    data = {"requestJobDescription": json.dumps(rjd, indent=4),
-            "template": template}
+    data = {
+        "requestJobDescription": json.dumps(rjd, indent=4),
+        "template": template
+    }
 
     # Verbose Job Description / JSON Dict?
     vjd = rjd.copy()
@@ -173,19 +184,22 @@ def export_and_download_reports(
         print(resp.text)
 
     if verbosity > 2:
-        print("Expensify {} {} call response status code: {} ({})".format(
-            rjd["inputSettings"]["type"], rjd["type"], resp.status_code,
-            "{:,.0f} seconds".format(ct)))
+        print(f"Expensify {rjd['inputSettings']['type']} {rjd['type']} call response status code: "
+              f"{resp.status_code} ({ct:,.0f} seconds)")
 
     if resp.text[0] == "{" and resp.json().get("responseCode") == 500:
         msg = "\n\n".join([dumped_vjd, resp.text])
         raise Exception(msg)
 
-    rjd2 = {"type": "download",
-            "credentials": credentials,
-            "fileName": resp.text}
+    rjd2 = {
+        "type": "download",
+        "credentials": credentials,
+        "fileName": resp.text
+    }
 
-    data2 = {"requestJobDescription": json.dumps(rjd2, indent=4)}
+    data2 = {
+        "requestJobDescription": json.dumps(rjd2, indent=4)
+    }
 
     if verbosity > 2:
         print("Expensify JobDescription (sans creds):")
@@ -228,11 +242,12 @@ def export_and_download_reports(
     if verbosity > 2:
         if verbosity > 8:
             print(json.dumps(rj, indent=4))
-        print("Expensify {} call response status code: {} ({})".format(
-            rjd2["type"], resp2.status_code, "{:,.0f} seconds".format(ct)))
+
+        print(f"Expensify {rjd2['type']} call response status code: {resp2.status_code} ({ct:,.0f} seconds)")
+
         if verbosity > 10:
             print("Inspect resp2.text, rj:")
-            import ipdb;
+            import ipdb
             ipdb.set_trace()
 
     return rj
@@ -261,16 +276,22 @@ def export_and_download_reconciliation(
             "domain": domain,
             "feed": "export_all_feeds",
         },
-        "outputSettings": {"fileExtension": file_extension.lstrip(".")},
+        "outputSettings": {
+            "fileExtension": file_extension.lstrip(".")
+        },
     }
 
     if not template:
+        # TODO: broken reference to DEFAULT_REC_CSV_TEMPLATE here...
         if not file_extension.lstrip(".") == "csv":
             raise NotImplementedError(file_extension)
+
         template = DEFAULT_REC_CSV_TEMPLATE
 
-    data = {"requestJobDescription": json.dumps(rjd, indent=4),
-            "template": template}
+    data = {
+        "requestJobDescription": json.dumps(rjd, indent=4),
+        "template": template
+    }
 
     # Verbose Job Description / JSON Dict?
     vjd = rjd.copy()
@@ -289,23 +310,27 @@ def export_and_download_reconciliation(
 
     if verbosity > 7:
         print(resp.text)
-        import ipdb;
+        import ipdb
         ipdb.set_trace()
+
     if verbosity > 2:
-        print("Expensify {} {} call response status code: {} ({})".format(
-            rjd["inputSettings"]["type"], rjd["type"], resp.status_code,
-            "{:,.0f} seconds".format(ct)))
+        print(f"Expensify {rjd['inputSettings']['type']} {rjd['type']} call response status code:"
+              f" {resp.status_code} ({ct:,.0f} seconds)")
 
     if resp.text[0] == "{" and resp.json().get("responseCode") == 500:
         msg = "\n\n".join([dumped_vjd, resp.text])
         raise Exception(msg)
 
-    rjd2 = {"type": "download",
-            "credentials": credentials,
-            "fileName": resp.json()["filename"],
-            "fileSystem": "reconciliation"}
+    rjd2 = {
+        "type": "download",
+        "credentials": credentials,
+        "fileName": resp.json()["filename"],
+        "fileSystem": "reconciliation"
+    }
 
-    data2 = {"requestJobDescription": json.dumps(rjd2, indent=4)}
+    data2 = {
+        "requestJobDescription": json.dumps(rjd2, indent=4)
+    }
 
     if verbosity > 2:
         print("Expensify JobDescription (sans creds):")
@@ -319,7 +344,7 @@ def export_and_download_reconciliation(
 
     if verbosity > 8:
         print(resp2)
-        import ipdb;
+        import ipdb
         ipdb.set_trace()
 
     # Call Time
@@ -327,7 +352,6 @@ def export_and_download_reconciliation(
 
     if file_extension.replace(".", "").lower() == "pdf":
         # Just save and return the path
-        destination_handle = open(download_path, 'wb')
         with open(download_path, 'wb') as destination_handle:
             destination_handle.write(resp2.content)
 
@@ -339,13 +363,14 @@ def export_and_download_reconciliation(
     if verbosity > 2:
         if verbosity > 6:
             print(json.dumps(rj, indent=4))
-            import ipdb;
+            import ipdb
             ipdb.set_trace()
-        print("Expensify {} call response status code: {} ({})".format(
-            rjd2["type"], resp2.status_code, "{:,.0f} seconds".format(ct)))
+
+        print(f"Expensify {rjd2['type']} call response status code: {resp2.status_code} ({ct:,.0f} seconds)")
+
         if verbosity > 10:
             print("Inspect resp2.text, rj:")
-            import ipdb;
+            import ipdb
             ipdb.set_trace()
 
     return rj
@@ -369,12 +394,16 @@ def get_policies(policy_ids=None, user_email=None,
         "inputSettings": {
             "type": "policy",
             "fields": ["categories", "reportFields", "tags", "tax"],
-            "policyIDList": policy_ids}}
+            "policyIDList": policy_ids
+        }
+    }
 
     if user_email:
-        rdj["inputSettings"]["userEmail"] = user_email
+        rjd["inputSettings"]["userEmail"] = user_email
 
-    data = {"requestJobDescription": json.dumps(rjd, indent=4)}
+    data = {
+        "requestJobDescription": json.dumps(rjd, indent=4)
+    }
 
     # Verbose Job Description / JSON Dict?
     vjd = rjd.copy()
@@ -392,9 +421,9 @@ def get_policies(policy_ids=None, user_email=None,
     ct = time.time() - st
 
     if verbosity > 2:
-        print("Expensify {} {} call response status code: {} ({})".format(
-            rjd["inputSettings"]["type"], rjd["type"], resp.status_code,
-            "{:,.0f} seconds".format(ct)))
+        print(f"Expensify {rjd['inputSettings']['type']} {rjd['type']} call response status code: "
+              f"{resp.status_code} ({ct:,.0f} seconds)")
+
         if verbosity > 6:
             print(json.dumps(resp.json(), indent=4))
 
@@ -421,7 +450,7 @@ def get_policy_list(admin_only=True, user_email=None, verbosity=0,
 
     # Verbose Job Description / JSON Dict?
     vjd = rjd.copy()
-    del (vjd["credentials"])
+    del vjd["credentials"]
     dumped_vjd = json.dumps(vjd, indent=4)
 
     if verbosity > 2:
@@ -440,18 +469,18 @@ def get_policy_list(admin_only=True, user_email=None, verbosity=0,
     # Call Time
     ct = time.time() - st
 
-    if not resp.status_code == 200 or not "policyList" in resp.json():
-        msg = "\n\n".join([
-            f"policyList getter failure ({resp.status_code}):",
-            resp.text])
+    if not resp.status_code == 200 or "policyList" not in resp.json():
+        msg = "\n\n".join([f"policyList getter failure ({resp.status_code}):", resp.text])
+
         if verbosity > 3:
             print(msg)
+
         raise Exception(msg)
 
     if verbosity > 2:
-        print("Expensify {} {} call response status code: {} ({})".format(
-            rjd["inputSettings"]["type"], rjd["type"], resp.status_code,
-            "{:,.0f} seconds".format(ct)))
+        print(f"Expensify {rjd['inputSettings']['type']} {rjd['type']} call response status code: {resp.status_code} "
+              f"({ct:,.0f} seconds)")
+
         if verbosity > 5:
             print(json.dumps(resp.json(), indent=4))
 
@@ -470,12 +499,17 @@ def update_employees(policy_id, data_path, verbosity=0, **credentials):
         "inputSettings": {
             "type": "employees",
             "policyID": policy_id,
-            "fileType": "csv"}}
+            "fileType": "csv"
+        }
+    }
 
     data = {
-        "requestJobDescription": json.dumps(rjd, indent=4), }
+        "requestJobDescription": json.dumps(rjd, indent=4),
+    }
+
     files = {
-        "data": ("employees.csv", open(data_path, "r")), }
+        "data": ("employees.csv", open(data_path, "r")),
+    }
 
     # Start Time
     st = time.time()
@@ -484,9 +518,9 @@ def update_employees(policy_id, data_path, verbosity=0, **credentials):
     ct = time.time() - st
 
     if verbosity > 2:
-        print("Expensify {} {} call response status code: {} ({})".format(
-            rjd["inputSettings"]["type"], rjd["type"], resp.status_code,
-            "{:,.0f} seconds".format(ct)))
+        print(f"Expensify {rjd['inputSettings']['type']} {rjd['type']} call response status code: {resp.status_code} "
+              f"({ct:,.0f} seconds)")
+
         if verbosity > 3:
             print(json.dumps(resp.json(), indent=4))
 
@@ -511,7 +545,9 @@ def update_policy(policy_id, categories=None, tags=None,
         "credentials": credentials.copy(),
         "inputSettings": {
             "type": "policy",
-            "policyID": policy_id}}
+            "policyID": policy_id
+        }
+    }
 
     if categories:
         if not "action" in categories:
@@ -522,16 +558,17 @@ def update_policy(policy_id, categories=None, tags=None,
     if tags:
         if tags.get("source") == "file":
             raise NotImplementedError("Implement dependent-level tag updates!")
-        elif not "source" in tags:
+        elif "source" not in tags:
             tags["source"] = "inline"
 
-        if not "action" in tags:
+        if "action" not in tags:
             tags["action"] = default_action
 
         rjd["tags"] = tags
 
     data = {
-        "requestJobDescription": json.dumps(rjd, indent=4), }
+        "requestJobDescription": json.dumps(rjd, indent=4),
+    }
 
     # Start Time
     st = time.time()
@@ -550,14 +587,15 @@ def update_policy(policy_id, categories=None, tags=None,
         raise Exception(rj)
 
     if verbosity > 2:
-        print("Expensify {} {} call response status code: {} ({})".format(
-            rjd["inputSettings"]["type"], rjd["type"], resp.status_code,
-            "{:,.0f} seconds".format(ct)))
+        print(f"Expensify {rjd['inputSettings']['type']} {rjd['type']} call response status code: {resp.status_code} "
+              f"({ct:,.0f} seconds)")
+
         if verbosity > 5:
             print(json.dumps(resp.json(), indent=4))
+
             if verbosity > 10:
                 print("Inspect resp:")
-                import ipdb;
+                import ipdb
                 ipdb.set_trace()
 
     return resp.json()
@@ -575,17 +613,19 @@ def set_report_status(report_ids, status="REIMBURSED", verbosity=0,
     if not isinstance(report_ids, (list, tuple)):
         report_ids = str(report_ids).split(",")
 
-    data = {"requestJobDescription": json.dumps({
-        "type": "update",
-        "credentials": credentials.copy(),
-        "inputSettings": {
-            "type": "reportStatus",
-            "status": "REIMBURSED",
-            "filters": {
-                "reportIDList": ",".join(report_ids)
+    data = {
+        "requestJobDescription": json.dumps({
+            "type": "update",
+            "credentials": credentials.copy(),
+            "inputSettings": {
+                "type": "reportStatus",
+                "status": "REIMBURSED",
+                "filters": {
+                    "reportIDList": ",".join(report_ids)
+                }
             }
-        }
-    }, indent=4)}
+        }, indent=4)
+    }
 
     # Start Time
     st = time.time()
@@ -598,12 +638,12 @@ def set_report_status(report_ids, status="REIMBURSED", verbosity=0,
     if "skippedReports" in rj:
         skipped_reports = rj["skippedReports"]
         print("The following reports were NOT updated:")
+
         for skip_dict in skipped_reports:
             print(skip_dict['reportID'], "-", skip_dict['reason'])
 
     if verbosity > 2:
         print("Expensify report-status-updater call status",
-              "code: {} ({})".format(
-                  resp.status_code, "{:,.0f} seconds".format(ct)))
+              f"code: {resp.status_code} ({ct:,.0f} seconds)")
 
     return rj
