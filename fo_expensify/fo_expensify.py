@@ -131,10 +131,10 @@ def export_and_download_reports(
         if isinstance(report_ids, str):
             report_ids = report_ids.split(",")
         elif isinstance(report_ids, (float, int)):
-            report_ids = [str(int(report_ids))]
+            # i.e. just a single report
+            report_ids = [ report_ids ]
 
-        rjd["inputSettings"]["filters"]["reportIDList"] = ",".join(
-            [str(int(rid)) for rid in report_ids])
+        rjd["inputSettings"]["filters"]["reportIDList"] = ",".join(report_ids)
 
     if policy_ids:
         if isinstance(policy_ids, str):
