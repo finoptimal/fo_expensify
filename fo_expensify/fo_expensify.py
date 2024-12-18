@@ -36,7 +36,7 @@ DEFAULT_JSON_TEMPLATE = """
 ]
 """
 
-SELF_THROTTLE_SECS = 1
+SELF_THROTTLE_SECS = 2
 
 def post(data, files=None, timeout=60):
     informed_sleep(
