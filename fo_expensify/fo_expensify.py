@@ -3,7 +3,7 @@ Wrapper around this REST API:
 
 https://integrations.expensify.com/Integration-Server/doc/
 
-Copyright 2017-2022 FinOptimal, Inc. All rights reserved.
+Copyright 2017-2025 FinOptimal, Inc. All rights reserved.
 """
 import json
 import re
@@ -11,6 +11,7 @@ import requests
 import time
 
 from finoptimal.logging import get_file_logger
+from finoptimal.utilities import informed_sleep
 
 api_logger = get_file_logger('api/expensify')
 
@@ -35,8 +36,11 @@ DEFAULT_JSON_TEMPLATE = """
 ]
 """
 
+SELF_THROTTLE_SECS = 1
 
 def post(data, files=None, timeout=60):
+    informed_sleep(
+        SELF_THROTTLE_SECS, narrative="Stay below 50-request / minute limit!", verbosity=api_logger.vb)
     resp = requests.post(url=URL, data=data, files=files, timeout=timeout)
 
     api_logger.info(f"{resp.__hash__()} - {resp.status_code} {resp.reason} - "
