@@ -36,11 +36,10 @@ DEFAULT_JSON_TEMPLATE = """
 ]
 """
 
-SELF_THROTTLE_SECS = 3
+SELF_THROTTLE_SECS = 4
 
 def post(data, files=None, timeout=60):
-    informed_sleep(
-        SELF_THROTTLE_SECS, narrative="Stay below 50-request / minute limit!", verbosity=api_logger.vb)
+    informed_sleep(SELF_THROTTLE_SECS, narrative="Stay below 50-request / minute limit!", verbosity=api_logger.vb)
     resp = requests.post(url=URL, data=data, files=files, timeout=timeout)
 
     api_logger.info(f"{resp.__hash__()} - {resp.status_code} {resp.reason} - "
