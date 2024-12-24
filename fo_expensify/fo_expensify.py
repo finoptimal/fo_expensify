@@ -381,8 +381,7 @@ def export_and_download_reconciliation(
 
 
 @retry()
-def get_policies(policy_ids=None, user_email=None,
-                 verbosity=0, **credentials):
+def get_policies(policy_ids=None, user_email=None, verbosity=0, **credentials):
     """
     https://integrations.expensify.com/Integration-Server/doc/#policy-getter
     """
@@ -421,6 +420,7 @@ def get_policies(policy_ids=None, user_email=None,
     # Start Time
     st = time.time()
     resp = post(data=data, timeout=240)
+    rj = resp.json()
     # Call Time
     ct = time.time() - st
 
@@ -429,7 +429,10 @@ def get_policies(policy_ids=None, user_email=None,
               f"{resp.status_code} ({ct:,.0f} seconds)")
 
         if verbosity > 6:
-            print(json.dumps(resp.json(), indent=4))
+            print(json.dumps(rj, indent=4))
+
+    if not "policyInfo" in rj.keys():
+        raise Exception("Received No Policy Data!")
 
     return resp.json()
 
